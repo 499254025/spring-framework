@@ -1,0 +1,114 @@
+description = "My Test"
+
+apply plugin: "kotlin"
+
+dependencies {
+    api(project(":spring-core"))
+    implementation(project(":spring-aop"))
+    implementation(project(":spring-beans"))
+    implementation(project(":spring-context"))
+    implementation(project(":spring-jdbc"))
+    implementation(project(":spring-orm"))
+    implementation(project(":spring-tx"))
+    implementation(project(":spring-web"))
+    implementation(project(":spring-webflux"))
+    implementation(project(":spring-webmvc"))
+    implementation(project(":spring-websocket"))
+    implementation("javax.activation:javax.activation-api")
+    implementation("javax.el:javax.el-api")
+    implementation("javax.inject:javax.inject")
+    implementation("javax.servlet:javax.servlet-api")
+    implementation("javax.servlet.jsp:javax.servlet.jsp-api")
+    implementation("javax.servlet.jsp.jstl:javax.servlet.jsp.jstl-api")
+    implementation("javax.xml.bind:jaxb-api")
+    implementation("javax.websocket:javax.websocket-api")
+    implementation("junit:junit")
+    implementation("org.junit.jupiter:junit-jupiter-api")
+    implementation("org.testng:testng")
+    implementation("org.aspectj:aspectjweaver")
+    implementation("org.codehaus.groovy:groovy")
+    implementation("org.hamcrest:hamcrest")
+    implementation("org.apache.taglibs:taglibs-standard-jstlel")
+    implementation("net.sourceforge.htmlunit:htmlunit")
+    implementation("org.seleniumhq.selenium:htmlunit-driver")
+    implementation("org.seleniumhq.selenium:selenium-java")
+    implementation("org.xmlunit:xmlunit-matchers")
+    implementation("org.skyscreamer:jsonassert")
+    implementation("com.jayway.jsonpath:json-path")
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib")
+    implementation("io.projectreactor:reactor-test")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+    testImplementation (project(":spring-context-support"))
+    testImplementation (project(":spring-oxm"))
+    testImplementation (testFixtures(project(":spring-beans")))
+    testImplementation (testFixtures(project(":spring-context")))
+    testImplementation (testFixtures(project(":spring-core")))
+    testImplementation (testFixtures(project(":spring-tx")))
+    testImplementation (testFixtures(project(":spring-web")))
+    testImplementation ("javax.annotation:javax.annotation-api")
+    testImplementation ("javax.cache:cache-api")
+    testImplementation ("javax.ejb:javax.ejb-api")
+    testImplementation ("javax.interceptor:javax.interceptor-api")
+    testImplementation ("javax.mail:javax.mail-api")
+    testImplementation ("org.hibernate:hibernate-core")
+    testImplementation ("org.hibernate:hibernate-validator")
+    testImplementation ("javax.validation:validation-api")
+    testImplementation ("org.junit.platform:junit-platform-runner") {
+        exclude group: "junit", module: "junit"
+    }
+    testImplementation ("org.junit.platform:junit-platform-testkit")
+    testImplementation ("com.fasterxml.jackson.core:jackson-databind")
+    testImplementation ("com.thoughtworks.xstream:xstream")
+    testImplementation ("com.rometools:rome")
+    testImplementation ("org.apache.tiles:tiles-api")
+    testImplementation ("org.apache.tiles:tiles-core")
+    testImplementation ("org.apache.tiles:tiles-servlet")
+    testImplementation ("org.hsqldb:hsqldb")
+    testImplementation ("org.apache.httpcomponents:httpclient")
+    testImplementation ("io.projectreactor.netty:reactor-netty")
+    testImplementation ("de.bechte.junit:junit-hierarchicalcontextrunner")
+    testRuntime("org.junit.vintage:junit-vintage-engine") {
+        exclude group: "junit", module: "junit"
+    }
+    testRuntime("org.glassfish:javax.el")
+    testRuntime("com.sun.xml.bind:jaxb-core")
+    testRuntime("com.sun.xml.bind:jaxb-impl")
+}
+
+task junit(type: Test) {
+    description = "Runs JUnit 4 and JUnit Jupiter tests."
+    useJUnitPlatform {
+        excludeTags "failing-test-case"
+    }
+    include(["**/*Tests.class", "**/*Test.class"])
+    exclude(["**/testng/**/*.*"])
+    systemProperty("testGroups", project.properties.get("testGroups"))
+    // Java Util Logging for the JUnit Platform.
+    // systemProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager")
+}
+
+task testNG(type: Test) {
+    description = "Runs TestNG tests."
+    useTestNG()
+    include(["**/testng/**/*Tests.class", "**/testng/**/*Test.class"])
+    systemProperty("testGroups", project.properties.get("testGroups"))
+    // Show STD_OUT & STD_ERR of the test JVM(s) on the console:
+    // testLogging.showStandardStreams = true
+    // forkEvery 1
+}
+
+test {
+    description = "Runs all tests."
+    dependsOn junit, testNG
+    exclude(["**/*.*"])
+}
+
+task aggregateTestReports(type: TestReport) {
+    description = "Aggregates JUnit and TestNG test reports."
+    destinationDir = test.reports.html.destination
+    reportOn junit, testNG
+}
+
+check.dependsOn aggregateTestReports
