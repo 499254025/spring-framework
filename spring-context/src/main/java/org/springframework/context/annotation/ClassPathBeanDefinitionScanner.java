@@ -163,6 +163,11 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 		this.registry = registry;
 
 		if (useDefaultFilters) {
+			/**
+			 * 注册spring扫描类过滤器
+			 * 加了特定注解的类会被扫描到
+			 * 带有@Component、@Repository、@Service、@Controller、@ManagedBean、@Named
+			 */
 			registerDefaultFilters();
 		}
 		setEnvironment(environment);

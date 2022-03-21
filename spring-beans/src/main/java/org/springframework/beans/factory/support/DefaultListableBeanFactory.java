@@ -868,13 +868,28 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 		// Iterate over a copy to allow for init methods which in turn register new bean definitions.
 		// While this may not be part of the regular factory bootstrap, it does otherwise work fine.
+		/**
+		 * beanNames就是spring扫描得到的所有beanName都放在一个集合list中在
+		 */
 		List<String> beanNames = new ArrayList<>(this.beanDefinitionNames);
 
 		// Trigger initialization of all non-lazy singleton beans...
+		//循环我们所有的bean定义名称
 		for (String beanName : beanNames) {
+			//这个过程就是合并bean的过程，合并bean的过程有点绕，反正流程就是将Bean合并成了一个RootBeanDefinition
+			//因为spring在扫描的过程中会把Bean扫描成GenericBeanDefinition，GenericBeanDefinition是
+			//可以设置父子bean的，而RootBeanDefinition设置父亲BeanName的时候会直接报错的，因为
+			//RootBeanDefinition是顶级BeanDefinition，是没有父亲Bean的
 			RootBeanDefinition bd = getMergedLocalBeanDefinition(beanName);
+			//根据bean定义判断是不是抽象的 && 不是单例的 && 不是懒加载的
 			if (!bd.isAbstract() && bd.isSingleton() && !bd.isLazyInit()) {
+				//如果是FactoryBean，这里就是FactoryBean的一个很重要的概念了，下面的代码
+				//Object bean = getBean(FACTORY_BEAN_PREFIX + beanName);这里是在创建单例Bean，但是请注意，这里创建的Bean是FactoryBean，它只是spring容器中一个普通Bean
+				//这里创建的bean只是FactoryBean本身，比如我们的DemoFactoryBean,那么这里创建的就是DemoFactoryBean本身的对象，而不是它getObject（）方法返回的对象bean
+				//所以针对FactoryBean来说，FactoryBean本身对象的beanName是以&beanName形式存在的,但是请注意，在缓存map中还是去掉了&的，都是以beanName的形式存在的
+				//如果是factoryBean，并且是单例的bean，那么factoryBean本身的对象存在signletonObjects,而factoryBean的getobject返回的对象在factoryBeanObjectCache中
 				if (isFactoryBean(beanName)) {
+					//是 给beanName+前缀 & 符号
 					Object bean = getBean(FACTORY_BEAN_PREFIX + beanName);
 					if (bean instanceof FactoryBean) {
 						FactoryBean<?> factory = (FactoryBean<?>) bean;
@@ -885,23 +900,30 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 									getAccessControlContext());
 						}
 						else {
+							//注意看这个代码，这个代码的意思就是说你的FactoryBean是不是SmartFactoryBean,
+							//SmartFactoryBean也是一个Factorybean,但是它比FactoryBean多了一个功能就是可以设置为非懒加载的，也就是立马初始化
 							isEagerInit = (factory instanceof SmartFactoryBean &&
 									((SmartFactoryBean<?>) factory).isEagerInit());
 						}
 						if (isEagerInit) {
+							//调用真正的getBean
 							getBean(beanName);
 						}
 					}
 				}
-				else {
+				else {//非工厂Bean就是普通的bean
 					getBean(beanName);
 				}
 			}
 		}
-
+		//bean初始化完成过后，单例bean初始化的回调方法，但是要实现了SmartInitializingSingleton才有
+		//实现该接口后，当所有单例 bean 都初始化完成以后， 容器会回调该接口的方法 afterSingletonsInstantiated。
+		//主要应用场合就是在所有单例 bean 创建完成之后，可以在该回调中做一些事情
 		// Trigger post-initialization callback for all applicable beans...
 		for (String beanName : beanNames) {
+			//从单例缓存池中获取所有的对象
 			Object singletonInstance = getSingleton(beanName);
+			//判断当前的bean是否实现了SmartInitializingSingleton接口
 			if (singletonInstance instanceof SmartInitializingSingleton) {
 				SmartInitializingSingleton smartSingleton = (SmartInitializingSingleton) singletonInstance;
 				if (System.getSecurityManager() != null) {
@@ -911,6 +933,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 					}, getAccessControlContext());
 				}
 				else {
+					//触发实例化之后的方法afterSingletonsInstantiated
 					smartSingleton.afterSingletonsInstantiated();
 				}
 			}
@@ -922,13 +945,22 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	// Implementation of BeanDefinitionRegistry interface
 	//---------------------------------------------------------------------
 
+	/**
+	  * 首先对传入的bd进行合法性检查，如果检查失败则不会注册该bd。
+	  * 然后看看容器中是否已经存在该bd，若存在并且该bean允许被后来的同名bd覆盖，
+	  * 则直接覆盖。否则进入到else分支中。else分支中第一个过滤条件是处理并发注册bd的情况，
+	  * 如果存在则在锁内进行bd注册，否则直接向DefaultListableBeanFactory的beanDefinitionMap中注册bd即可。
+	  * 最后为了保险起见，如果该bd是声明为Singleton的bean，则需要重新注册一遍该类与其派生类的bd。
+	  * 在替换或删除现有bean定义之后调用，从而触发给定bean上的 clearMergedBeanDefinition、destroySingleton和resetBeanDefinition，
+	  * 以及所有将给定bean作为父bean的bd。完成后返回registerBeanDefinition中进行别名(aliases)的注册。
+	 */
 	@Override
 	public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition)
 			throws BeanDefinitionStoreException {
 
 		Assert.hasText(beanName, "Bean name must not be empty");
 		Assert.notNull(beanDefinition, "BeanDefinition must not be null");
-
+		// bd的合法性检查，还未见过出错的情况
 		if (beanDefinition instanceof AbstractBeanDefinition) {
 			try {
 				((AbstractBeanDefinition) beanDefinition).validate();
@@ -939,6 +971,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			}
 		}
 
+		//从bean工厂的bdmap中看看有没有我们需要注册的bd。因为这里是第一次进来，并且没有并发的情况发生，有就闯鬼了！所以进入else分支。
 		BeanDefinition existingDefinition = this.beanDefinitionMap.get(beanName);
 		if (existingDefinition != null) {
 			if (!isAllowBeanDefinitionOverriding()) {
@@ -969,6 +1002,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			this.beanDefinitionMap.put(beanName, beanDefinition);
 		}
 		else {
+			//在同一时间是否有另外的线程已经在创建这个bean了？一般不会。
 			if (hasBeanCreationStarted()) {
 				// Cannot modify startup-time collection elements anymore (for stable iteration)
 				synchronized (this.beanDefinitionMap) {
@@ -982,13 +1016,17 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			}
 			else {
 				// Still in startup registration phase
+				//向bean工厂beanDefinitionMap中注册<beanName, beanDefinition>
 				this.beanDefinitionMap.put(beanName, beanDefinition);
+				//向bean工厂beanDefinitionNames(list)中添加beanName
 				this.beanDefinitionNames.add(beanName);
+				//如果beanName还出现在通过手动注册的链表中，则将其移除
 				removeManualSingletonName(beanName);
 			}
 			this.frozenBeanDefinitionNames = null;
 		}
 
+		//走到这里发现该beanName之前已经被注册，或者是单例的，则需要重置该bean，用新的覆盖旧的。
 		if (existingDefinition != null || containsSingleton(beanName)) {
 			resetBeanDefinition(beanName);
 		}
