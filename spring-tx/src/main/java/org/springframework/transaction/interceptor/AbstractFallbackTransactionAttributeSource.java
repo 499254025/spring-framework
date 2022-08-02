@@ -109,6 +109,7 @@ public abstract class AbstractFallbackTransactionAttributeSource implements Tran
 		}
 		else {
 			// We need to work it out.
+			// 计算事务属性
 			TransactionAttribute txAttr = computeTransactionAttribute(method, targetClass);
 			// Put it in the cache.
 			if (txAttr == null) {
@@ -159,6 +160,7 @@ public abstract class AbstractFallbackTransactionAttributeSource implements Tran
 		Method specificMethod = AopUtils.getMostSpecificMethod(method, targetClass);
 
 		// First try is the method in the target class.
+		// 先根据method对象，获取事务属性对象
 		TransactionAttribute txAttr = findTransactionAttribute(specificMethod);
 		if (txAttr != null) {
 			return txAttr;
@@ -202,6 +204,8 @@ public abstract class AbstractFallbackTransactionAttributeSource implements Tran
 	 * @param method the method to retrieve the attribute for
 	 * @return all transaction attribute associated with this method, or {@code null} if none
 	 */
+
+	//AnnotationTransactionAttributeSource 这个类
 	@Nullable
 	protected abstract TransactionAttribute findTransactionAttribute(Method method);
 

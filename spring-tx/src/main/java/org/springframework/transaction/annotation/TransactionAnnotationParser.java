@@ -64,6 +64,8 @@ public interface TransactionAnnotationParser {
 	 * @return the configured transaction attribute, or {@code null} if none found
 	 * @see AnnotationTransactionAttributeSource#determineTransactionAttribute
 	 */
+
+	// 处理类 SpringTransactionAnnotationParser
 	@Nullable
 	TransactionAttribute parseTransactionAnnotation(AnnotatedElement element);
 

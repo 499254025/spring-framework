@@ -244,12 +244,12 @@ public abstract class AopUtils {
 		}
 		classes.addAll(ClassUtils.getAllInterfacesForClassAsSet(targetClass));
 
-		for (Class<?> clazz : classes) {
+		for (Class<?> clazz : classes) { // 通过反射获取当前类所有的method对象
 			Method[] methods = ReflectionUtils.getAllDeclaredMethods(clazz);
 			for (Method method : methods) {
 				if (introductionAwareMethodMatcher != null ?
 						introductionAwareMethodMatcher.matches(method, targetClass, hasIntroductions) :
-						methodMatcher.matches(method, targetClass)) {
+						methodMatcher.matches(method, targetClass)) { // 调用方法，判断当前方法是否匹配 调用TransactionAttributeSourcePointcut 类的matches方法
 					return true;
 				}
 			}

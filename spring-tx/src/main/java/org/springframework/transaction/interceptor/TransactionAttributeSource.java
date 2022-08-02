@@ -61,6 +61,7 @@ public interface TransactionAttributeSource {
 	 * in which case the declaring class of the method must be used)
 	 * @return the matching transaction attribute, or {@code null} if none found
 	 */
+	// 调用AbstractFallbackTransactionAttributeSource
 	@Nullable
 	TransactionAttribute getTransactionAttribute(Method method, @Nullable Class<?> targetClass);
 

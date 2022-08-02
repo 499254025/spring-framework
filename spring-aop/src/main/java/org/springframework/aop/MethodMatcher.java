@@ -62,6 +62,7 @@ public interface MethodMatcher {
 	 * @param targetClass the target class
 	 * @return whether or not this method matches statically
 	 */
+	// TransactionAttributeSourcePointcut
 	boolean matches(Method method, Class<?> targetClass);
 
 	/**

@@ -132,6 +132,9 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * and automatically refreshing the context.
 	 * @param basePackages the packages to scan for component classes
 	 */
+	/*
+		改构造函数会自动扫描给定得包及其子包下的所有类，并自动是恶所有的spring bean ，将其注入到容器中
+	 */
 	public AnnotationConfigApplicationContext(String... basePackages) {
 		this();
 		scan(basePackages);
@@ -141,6 +144,9 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	/**
 	 * Propagate the given custom {@code Environment} to the underlying
 	 * {@link AnnotatedBeanDefinitionReader} and {@link ClassPathBeanDefinitionScanner}.
+	 */
+	/*
+
 	 */
 	@Override
 	public void setEnvironment(ConfigurableEnvironment environment) {
