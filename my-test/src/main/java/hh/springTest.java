@@ -19,7 +19,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class springTest {
 	public static void main(String[] args) {
 		AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext(appConfig.class);
-		new ClassPathXmlApplicationContext()
+//		new ClassPathXmlApplicationContext()
 		UserService userService = (UserService) applicationContext.getBean("userService");
 		System.out.println("1");
 //		ClassPathXmlApplicationContext
